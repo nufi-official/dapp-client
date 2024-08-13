@@ -192,6 +192,14 @@ export function ensureWidgetEmbeddedInIframe(
           break
         }
         case 'getParentWindowDimensionsRequest': {
+          const iframe = document.querySelector(
+            NUFI_WIDGET_QUERY_SELECTOR,
+          ) as HTMLIFrameElement | null
+          if (!iframe) {
+            return
+          }
+          const iframeRect = iframe.getBoundingClientRect()
+
           const response: GetParentWindowDimensionsResponse = {
             appId: 'nufi',
             method: 'getParentWindowDimensionsResponse',
@@ -200,6 +208,16 @@ export function ensureWidgetEmbeddedInIframe(
               height: window.innerHeight,
               top: window.screenTop,
               left: window.screenLeft,
+            },
+            iframeRect: {
+              top: iframeRect.top,
+              right: iframeRect.right,
+              bottom: iframeRect.bottom,
+              left: iframeRect.left,
+              width: iframeRect.width,
+              height: iframeRect.height,
+              x: iframeRect.x,
+              y: iframeRect.y,
             },
           }
           safeReplyToEvent(_e, response)

@@ -1,4 +1,8 @@
-import detectEthereumProvider from '@metamask/detect-provider'
+import type {
+  EIP6963AnnounceProviderEvent,
+  EIP6963ProviderDetail,
+  MetaMaskInpageProvider,
+} from '@metamask/providers'
 
 import type {InjectConnectors} from './core/injectConnectors'
 import {injectConnectors} from './core/injectConnectors'
@@ -106,27 +110,42 @@ const getContext = (): CoreDappSdkContext => {
 }
 
 const isMetamaskInstalled = async () => {
+  // NOTE: we have duplicate implementation of this in metamask-snap package
   try {
-    const provider = await detectEthereumProvider({mustBeMetaMask: true})
-    if (!provider) return false
+    // https://eips.ethereum.org/EIPS/eip-6963
+    const provider = await new Promise<MetaMaskInpageProvider | null>(
+      (resolve) => {
+        const onProviderAnnounced = (event: Event) => {
+          const providerDetail: EIP6963ProviderDetail = (
+            event as EIP6963AnnounceProviderEvent
+          ).detail
+
+          if (providerDetail.info.rdns === 'io.metamask') {
+            window.removeEventListener(
+              'eip6963:announceProvider',
+              onProviderAnnounced,
+            )
+            resolve(providerDetail.provider as MetaMaskInpageProvider)
+          }
+        }
+        window.addEventListener('eip6963:announceProvider', (event) => {
+          onProviderAnnounced(event)
+        })
+
+        window.dispatchEvent(new Event('eip6963:requestProvider'))
+
+        // In case the provider is not detected, we resolve with null after 5 seconds
+        setTimeout(() => {
+          resolve(null)
+        }, 3_000)
+      },
+    )
+
+    if (provider === null) return false
 
     // Note that:
     // -> We are not reusing @nufi/metamask-snap to avoid public packages being
     // interconnected with our non-public packages.
-    // -> Even if our snap is installed, this returns empty result, because the dapp
-    // calls it from its domain, and the snap installation is bound to NuFi domain.
-    // See https://docs.metamask.io/wallet/reference/wallet_getsnaps
-    // -> We expect this calls to not be implemented by the majority of wallets emulating
-    // metamask, and this call to throw, though we can not guarantee that.
-    await (
-      provider as unknown as {
-        request: (params: {
-          method: 'wallet_getSnaps'
-        }) => Promise<Record<string, unknown>>
-      }
-    ).request({
-      method: 'wallet_getSnaps',
-    })
     return true
   } catch (err) {
     return false

@@ -31,6 +31,7 @@ export type GetParentWindowDimensionsRequest = CoreNufiMessage & {
 export type GetParentWindowDimensionsResponse = CoreNufiMessage & {
   method: 'getParentWindowDimensionsResponse'
   dimensions: {width: number; height: number; left: number; top: number}
+  iframeRect?: Omit<DOMRect, 'toJSON'>
 }
 
 export type WidgetManagementMessage =

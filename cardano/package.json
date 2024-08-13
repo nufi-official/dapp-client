@@ -1,15 +1,19 @@
 {
   "name": "@nufi/dapp-client-cardano",
-  "version": "0.3.0",
+  "version": "0.3.3",
   "license": "MIT",
-  "homepage": "https://nu.fi",
+  "homepage": "https://github.com/nufi-official/dapp-client/tree/master/cardano",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nufi-official/dapp-client.git"
+  },
   "main": "dist/index.js",
   "types": "dist/index",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "test:tsc": "tsc --noEmit",
     "test": "yarn test:tsc",
     "watch": "tsc --watch",
