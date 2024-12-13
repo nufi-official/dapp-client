@@ -20,7 +20,6 @@ const connectorKind = 'cardano'
 type CardanoSpecificDappConnectorConfig = {
   cardano: {
     isCip62Enabled: boolean
-    isCip95Enabled: boolean
   }
 }
 
@@ -41,6 +40,10 @@ export const API_VERSION = '1.1.0'
 export const createInjectedConnectorFactory =
   (options: {
     getIsEnabled: (client: MessagingClient) => () => Promise<boolean>
+    // As in the current state we can not assign the same `priorityTimestamp` to
+    // both `openConnectorWindow` and `enable`, we are not awaiting
+    // `openConnectorWindow` which does not have to be awaited in case of the widget
+    shouldAwaitConnectorWindowOpen?: boolean
   }): InjectedConnectorFactory<CardanoDappConnectorConfig> =>
   (client, config) => {
     const createProxyMethods = (methods: string[]) =>
@@ -90,17 +93,19 @@ export const createInjectedConnectorFactory =
     }
 
     const isCip62Enabled = config.connectors.cardano.isCip62Enabled
-    const isCip95Enabled = config.connectors.cardano.isCip95Enabled
 
     const connectorObject = {
       enable: async () => {
         if (!client.isConnectorWindowOpen()) {
-          await client.openConnectorWindow()
+          const openConnectorWindowPromise = client.openConnectorWindow()
+          if (!options.shouldAwaitConnectorWindowOpen) {
+            await openConnectorWindowPromise
+          }
         }
         await client.proxy.enable() // This will throw on failure
         return {
           ...cip30ApiObject,
-          ...(isCip95Enabled ? {cip95: cip95ApiObject} : {}),
+          cip95: cip95ApiObject,
         }
       },
       isEnabled: options.getIsEnabled(client),
@@ -110,8 +115,13 @@ export const createInjectedConnectorFactory =
               apiVersion: '0.1.0',
               enable: async (purposes: number[]) => {
                 ensureCatalystVotingPurpose(purposes)
-                if (!client.isConnectorWindowOpen())
-                  await client.openConnectorWindow()
+                if (!client.isConnectorWindowOpen()) {
+                  const openConnectorWindowPromise =
+                    client.openConnectorWindow()
+                  if (!options.shouldAwaitConnectorWindowOpen) {
+                    await openConnectorWindowPromise
+                  }
+                }
                 await client.proxy.enable() // This will throw on failure
                 return cip62ApiObject
               },
@@ -121,10 +131,7 @@ export const createInjectedConnectorFactory =
       apiVersion: API_VERSION,
       name: config.name,
       icon: config.icons.default,
-      supportedExtensions: [
-        ...(isCip62Enabled ? [{cip: 62}] : []),
-        ...(isCip95Enabled ? [{cip: 95}] : []),
-      ],
+      supportedExtensions: [{cip: 95}, ...(isCip62Enabled ? [{cip: 62}] : [])],
     } as unknown as ConnectorObject
 
     return {
@@ -138,13 +145,6 @@ export const createInjectedConnectorFactory =
           [connectorKind, objKeyByConnectorPlatform[config.connectorPlatform]],
           connectorObject,
         )
-        if (walletOverrides?.flint) {
-          setIfDoesNotExist(window, [connectorKind, 'flint'], {
-            ...connectorObject,
-            name: 'Flint Wallet',
-            icon: emulatedWalletIcons.flint,
-          })
-        }
         if (walletOverrides?.eternl) {
           const eternlConnector = {
             ...connectorObject,

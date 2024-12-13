@@ -1,5 +1,5 @@
-import type {CoreNufiMessage} from '../core/types'
-import type {Web3AuthProvider} from './web3AuthProviders'
+import type {CoreNufiMessage} from '../dappCore/types'
+import type {Web3AuthProvider} from '../sdkCore/web3Auth'
 
 export type SocialLoginInfo = {
   email: string | null

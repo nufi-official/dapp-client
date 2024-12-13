@@ -1,53 +1,53 @@
+import type {InjectConnectors} from './dappCore/injectConnectors'
+import {injectConnectors} from './dappCore/injectConnectors'
+import type {EnsureChannelIsReady} from './sdkCore/ensureChannelReady'
+import {ensureChannelIsReady} from './sdkCore/ensureChannelReady'
+import {isMetamaskInstalled} from './sdkCore/metamask'
+import {getCoreSdkInfo} from './sdkCore/sdkInfo'
+import {logger, setLogLevel} from './utils/logging'
+import {CORE_SDK_NOT_INITIALIZED} from './widget'
 import type {
-  EIP6963AnnounceProviderEvent,
-  EIP6963ProviderDetail,
-  MetaMaskInpageProvider,
-} from '@metamask/providers'
-
-import type {InjectConnectors} from './core/injectConnectors'
-import {injectConnectors} from './core/injectConnectors'
-import {logger, setLogLevel} from './core/logging'
-import type {EnsureChannelIsReady} from './publicUtils'
-import {ensureChannelIsReady} from './publicUtils'
-import {getCoreSdkInfo} from './sdkInfo'
-import type {EnsureWidgetEmbeddedInIframe, IFrameOptions} from './widget'
-import {CORE_SDK_NOT_INITIALIZED, ensureWidgetEmbeddedInIframe} from './widget'
-import {registerWidgetApiEvents} from './widget/apiEvents'
-import type {SocialLoginInfo} from './widget/socialLoginInfo'
+  GetWidgetVisibilityStatus,
+  IFrameOptions,
+  ShowWidget,
+  SignOutWidgetMessage,
+  SocialLoginInfo,
+} from './widget'
+import {registerWidgetApiEvents} from './widget/events'
+import type {EnsureWidgetEmbeddedInIframe} from './widget/init'
+import {
+  ensureWidgetEmbeddedInIframe,
+  widgetManagementReadyPromise,
+} from './widget/init'
 import {
   exposeSocialLoginInfo,
   onSocialLoginInfoChanged,
 } from './widget/socialLoginInfo'
-import type {SignOutWidgetMessage} from './widget/types'
 
-export {SdkInfoItem, SdkInfoMessage, getSdkInfoReporter} from './sdkInfo'
-export {injectConnectors} from './core/injectConnectors'
-export {
-  ensureWidgetEmbeddedInIframe,
-  EnsureWidgetEmbeddedInIframe,
-  CORE_SDK_NOT_INITIALIZED,
-} from './widget'
-export * from './core/types'
-export * from './publicUtils'
-export * from './widget/types'
-export * from './widget/web3AuthProviders'
-export type {
-  SocialLoginInfoChangedMessage,
-  SocialLoginInfo,
-} from './widget/socialLoginInfo'
+export * from './utils/events'
+export * from './dappCore'
+export * from './sdkCore'
+export * from './widget'
 
 let initResult: {
   hideWidget: () => void
+  showWidget: ShowWidget
   sendSimplePostMessage: (message: unknown) => void
+  getWidgetVisibilityStatus: GetWidgetVisibilityStatus
 } | null = null
 
 const init = (
   origin = 'https://wallet.nu.fi',
   iframeOptions?: IFrameOptions,
 ): typeof initResult => {
-  const {hideWidget, sendSimplePostMessage} = ensureWidgetEmbeddedInIframe({
+  const {
+    hideWidget,
+    showWidget,
+    sendSimplePostMessage,
+    getWidgetVisibilityStatus,
+  } = ensureWidgetEmbeddedInIframe({
     type: 'prefetch',
-    baseUrl: `${origin}/widget`,
+    baseUrl: `${origin}/widget/`,
     iframeOptions,
   })
 
@@ -55,12 +55,16 @@ const init = (
 
   return {
     hideWidget,
+    showWidget,
     sendSimplePostMessage,
+    getWidgetVisibilityStatus,
   }
 }
 
 type Api = {
   hideWidget: () => void
+  showWidget: ShowWidget
+  getWidgetVisibilityStatus: GetWidgetVisibilityStatus
   onSocialLoginInfoChanged: (
     cb: (data: SocialLoginInfo | null) => unknown,
   ) => SocialLoginInfo | null
@@ -78,14 +82,48 @@ const getApi = (): Api => {
   if (initResult == null) {
     throw new Error(CORE_SDK_NOT_INITIALIZED)
   }
-  const {hideWidget, sendSimplePostMessage} = initResult
+  const {
+    hideWidget,
+    showWidget,
+    sendSimplePostMessage,
+    getWidgetVisibilityStatus,
+  } = initResult
 
   return {
     getSocialLoginInfo: exposeSocialLoginInfo,
     hideWidget,
+    showWidget,
+    getWidgetVisibilityStatus,
     onSocialLoginInfoChanged,
     signOut: () => sendSimplePostMessage(signOutMessage),
     isMetamaskInstalled,
+  }
+}
+
+type WidgetApi = Pick<
+  Api,
+  'showWidget' | 'hideWidget' | 'getWidgetVisibilityStatus' | 'signOut'
+>
+
+const getWidgetApi = async (): Promise<WidgetApi> => {
+  if (initResult == null) {
+    throw new Error(CORE_SDK_NOT_INITIALIZED)
+  }
+
+  await widgetManagementReadyPromise
+
+  const {
+    hideWidget,
+    showWidget,
+    getWidgetVisibilityStatus,
+    sendSimplePostMessage,
+  } = initResult
+
+  return {
+    hideWidget,
+    showWidget,
+    getWidgetVisibilityStatus,
+    signOut: () => sendSimplePostMessage(signOutMessage),
   }
 }
 
@@ -109,67 +147,38 @@ const getContext = (): CoreDappSdkContext => {
   }
 }
 
-const isMetamaskInstalled = async () => {
-  // NOTE: we have duplicate implementation of this in metamask-snap package
-  try {
-    // https://eips.ethereum.org/EIPS/eip-6963
-    const provider = await new Promise<MetaMaskInpageProvider | null>(
-      (resolve) => {
-        const onProviderAnnounced = (event: Event) => {
-          const providerDetail: EIP6963ProviderDetail = (
-            event as EIP6963AnnounceProviderEvent
-          ).detail
-
-          if (providerDetail.info.rdns === 'io.metamask') {
-            window.removeEventListener(
-              'eip6963:announceProvider',
-              onProviderAnnounced,
-            )
-            resolve(providerDetail.provider as MetaMaskInpageProvider)
-          }
-        }
-        window.addEventListener('eip6963:announceProvider', (event) => {
-          onProviderAnnounced(event)
-        })
-
-        window.dispatchEvent(new Event('eip6963:requestProvider'))
-
-        // In case the provider is not detected, we resolve with null after 5 seconds
-        setTimeout(() => {
-          resolve(null)
-        }, 3_000)
-      },
-    )
-
-    if (provider === null) return false
-
-    // Note that:
-    // -> We are not reusing @nufi/metamask-snap to avoid public packages being
-    // interconnected with our non-public packages.
-    return true
-  } catch (err) {
-    return false
-  }
-}
-
 export type PublicCoreSdk = {
   __getContext: () => CoreDappSdkContext
   __setLogLevel: typeof setLogLevel
   __logger: typeof logger
   __getSdkInfo: typeof getCoreSdkInfo
+  /**
+   * @deprecated
+   * The following methods ('showWidget' | 'hideWidget' | 'getWidgetVisibilityStatus' | 'signOut')
+   * are ignored if called when the widget is not yet initialized. We therefore suggest
+   * using `getWidgetApi` and importing other methods from default export instead.
+   */
   getApi: () => Api
-  init: (origin?: string) => void
+  getWidgetApi: () => Promise<WidgetApi>
+  init: (origin?: string, iframeOptions?: IFrameOptions) => void
+  getSocialLoginInfo: Api['getSocialLoginInfo']
+  onSocialLoginInfoChanged: Api['onSocialLoginInfoChanged']
+  isMetamaskInstalled: Api['isMetamaskInstalled']
 }
 
-const publicNufiCoreSdk = {
+const publicNufiCoreSdk: PublicCoreSdk = {
   __getContext: getContext,
   __setLogLevel: setLogLevel,
   __logger: logger,
   __getSdkInfo: getCoreSdkInfo,
   getApi,
+  getWidgetApi,
   init: (origin?: string, iframeOptions?: IFrameOptions) => {
     initResult = init(origin, iframeOptions)
   },
+  onSocialLoginInfoChanged,
+  getSocialLoginInfo: exposeSocialLoginInfo,
+  isMetamaskInstalled,
 }
 
 export default publicNufiCoreSdk

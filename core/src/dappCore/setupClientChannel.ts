@@ -1,7 +1,7 @@
-import {messageDirectionMatches} from '../publicUtils'
+import {safeAssertUnreachable} from '../utils/assertion'
+import {logger} from '../utils/logging'
 
-import {safeAssertUnreachable} from './assertion'
-import {logger} from './logging'
+import {messageDirectionMatches} from './nufiMessage'
 import type {
   InitChannelMessage,
   RequestArgument,
@@ -36,7 +36,7 @@ type SetupClientChannelParams<ConnectorKind extends UntypedConnectorKind> = {
   currentContext: ScriptContext
   targetContext: ScriptContext
   eventHandler: (
-    kind: ConnectorKind,
+    kind: ConnectorKind | undefined,
     method: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args: any[],

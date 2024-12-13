@@ -29,7 +29,7 @@ export const getSdkInfoReporter = () => {
 export const getCoreSdkInfo = (): SdkInfoItem => {
   let version = ''
   try {
-    version = require('../package.json').version
+    version = require('../../package.json').version
   } catch (err) {
     //
   }

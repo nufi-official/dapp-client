@@ -101,7 +101,7 @@ export type MessageToClientEvent<ConnectorKind extends UntypedConnectorKind> =
   MessageHeader & {
     type: 'event'
     targetOrigin: string
-    connectorKind: ConnectorKind
+    connectorKind?: ConnectorKind
     method: string
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args: any[]

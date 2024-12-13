@@ -1,46 +1,10 @@
-// Example: `setIfDoesNotExist(into, ['a', 's', 'd'], what)` is the same as
-// `into.a.s.d = what`, except that all intermediate objects are created if
-// they don't already exists, and `d` also must not already exists.
-
-import {logger} from './core/logging'
+import {isNufiMessage} from '../dappCore/nufiMessage'
 import type {
-  MessageHeader,
   ConnectorPlatform,
   PingChannelMessage,
-  ScriptContext,
   UntypedConnectorKind,
-} from './core/types'
-import {isNufiMessage} from './publicUtils'
-
-export {isNufiMessage, isNufiWidgetManagementMessage} from './core/utils'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const setIfDoesNotExist = <U>(into: any, path: string[], what: U) => {
-  for (const [i, segment] of path.entries()) {
-    if (!Object.hasOwn(into, segment)) {
-      into[segment] = i < path.length - 1 ? {} : what
-    }
-    into = into[segment]
-  }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const set = <U>(into: any, path: string[], what: U) => {
-  for (const [i, segment] of path.entries()) {
-    if (i === path.length - 1) {
-      into[segment] = what
-    } else if (!Object.hasOwn(into, segment)) {
-      into[segment] = {}
-    }
-    into = into[segment]
-  }
-}
-
-export const messageDirectionMatches = (
-  msg: MessageHeader,
-  senderContext: ScriptContext,
-  targetContext: ScriptContext,
-) => msg.targetContext === targetContext && msg.senderContext === senderContext
+} from '../dappCore/types'
+import {logger} from '../utils/logging'
 
 // Note that storing all previous "interval and handlers" and knowing which
 // to invalidate/remove would be complex. Therefore we always keep only the
@@ -114,18 +78,3 @@ export const ensureChannelIsReady = (
 }
 
 export type EnsureChannelIsReady = typeof ensureChannelIsReady
-
-export const objKeyByConnectorPlatform: Record<ConnectorPlatform, string> = {
-  extension: 'nufi',
-  snap: 'nufiSnap',
-  sso: 'nufiSSO',
-}
-
-export const safeReplyToEvent = (
-  e: MessageEvent<unknown>,
-  message: unknown,
-) => {
-  e.source?.postMessage(message, {targetOrigin: e.origin})
-}
-
-export {getRandomUUID} from './core/utils'

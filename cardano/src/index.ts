@@ -47,16 +47,20 @@ const getDappConnectorsConfig = ({
     connectors: {
       cardano: {
         isCip62Enabled: false,
-        isCip95Enabled: true,
       },
     },
   }
 }
 
+export type CardanoFeaturedToken = {
+  assetNameHex: string
+  policyIdHex: string
+}
+
 export const initNufiDappCardanoSdk = (
   sdk: PublicCoreSdk,
   type: Extract<ConnectorPlatform, 'sso' | 'snap'>,
-  options?: BlockchainSdkOptions,
+  options?: BlockchainSdkOptions<CardanoFeaturedToken>,
 ) => {
   sdk.__logger.debug('"initNufiDappCardanoSdk')
   const {ensureWidgetEmbeddedInIframe, ensureChannelIsReady, injectConnectors} =
@@ -76,11 +80,20 @@ export const initNufiDappCardanoSdk = (
     throw new Error('Unsupported web3Auth provider.')
   }
 
+  const encodedFeaturedTokens = (() => {
+    if (!options?.featuredTokens) return ''
+
+    const featuredTokens = options.featuredTokens
+    const tokens = featuredTokens.map((t) => t.policyIdHex + t.assetNameHex)
+    return encodeURIComponent(JSON.stringify(tokens))
+  })()
+
   const loginInfo: LoginInfo = {
     loginType,
     ...(type === 'sso' && options?.provider
       ? {provider: options.provider}
       : {}),
+    ...(encodedFeaturedTokens ? {featuredTokens: encodedFeaturedTokens} : {}),
   }
 
   const queryString = new URLSearchParams({
@@ -92,7 +105,7 @@ export const initNufiDappCardanoSdk = (
     sendPortPostMessage,
     sendSimplePostMessage,
     showWidget,
-    isWidgetHidden,
+    getWidgetVisibilityStatus,
     iframeDidRefresh,
   } = ensureWidgetEmbeddedInIframe({
     type: 'updateQueryString',
@@ -119,6 +132,7 @@ export const initNufiDappCardanoSdk = (
           // as we want the request to be redirected to widget in all cases.
           // That is so that the we can return `true` after user refreshes the page.
           getIsEnabled: (client) => async () => await client.proxy.isEnabled(),
+          shouldAwaitConnectorWindowOpen: true,
         }),
       },
       config,
@@ -150,11 +164,14 @@ export const initNufiDappCardanoSdk = (
           method,
         })
         if (connectorKind !== 'cardano') return
-        if (isWidgetHidden() && method === 'openConnectorWindow') {
+        if (
+          getWidgetVisibilityStatus() === 'hidden' &&
+          method === 'openConnectorWindow'
+        ) {
           sdk.__logger.debug(
             '"initNufiDappCardanoSdk: onBeforeRequest" showWidget',
           )
-          showWidget()
+          showWidget('closed')
         }
       },
       initChannelData,

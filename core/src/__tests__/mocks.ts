@@ -1,5 +1,6 @@
-import type {CreateConnectorsParams} from '../core/injectConnectors'
-import {injectConnectors} from '../core/injectConnectors'
+import {objKeyByConnectorPlatform} from '../dappCore/constants'
+import type {CreateConnectorsParams} from '../dappCore/injectConnectors'
+import {injectConnectors} from '../dappCore/injectConnectors'
 import type {
   ConnectorObject,
   InjectedConnectorFactory,
@@ -7,8 +8,8 @@ import type {
   InitChannelData,
   DappConnectorsConfig,
   MessagingClient,
-} from '../core/types'
-import {objKeyByConnectorPlatform, set} from '../publicUtils'
+} from '../dappCore/types'
+import {set} from '../dappCore/utils'
 
 export type CreateConnectorObject = (client: MessagingClient) => ConnectorObject
 

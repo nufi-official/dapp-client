@@ -1,38 +1,3 @@
-import type {WidgetManagementMessage} from '../widget/types'
-
-import type {NufiMessage, ConnectorPlatform} from './types'
-
-const widgetManagementMethods: WidgetManagementMessage['method'][] = [
-  'closeWidget',
-  'collapseWidget',
-  'openWidget',
-  'hideWidget',
-  'refreshPage',
-  'getParentWindowDimensionsRequest',
-  'getParentWindowDimensionsResponse',
-  'signOut',
-]
-
-export const isNufiWidgetManagementMessage = (
-  e: MessageEvent<unknown>,
-): e is MessageEvent<WidgetManagementMessage> => {
-  if (e.data == null) return false
-  const _e = e as MessageEvent<WidgetManagementMessage>
-  const method = _e.data.method
-  return _e?.data?.appId === 'nufi' && widgetManagementMethods.includes(method)
-}
-
-export const isNufiMessage = (
-  e: MessageEvent<unknown>,
-  expectedConnectorPlatform: ConnectorPlatform,
-): e is MessageEvent<NufiMessage> => {
-  const _e = e as MessageEvent<NufiMessage>
-  return Boolean(
-    _e?.data?.appId === 'nufi' &&
-      _e?.data?.connectorPlatform === expectedConnectorPlatform,
-  )
-}
-
 export const hardenUnreliableRequest = <T>(
   req: () => Promise<T>,
   fallbackResponse: T,
@@ -83,4 +48,29 @@ export const getRandomUUID = () => {
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
     /* eslint-enable no-bitwise */
   })
+}
+
+// Example: `setIfDoesNotExist(into, ['a', 's', 'd'], what)` is the same as
+// `into.a.s.d = what`, except that all intermediate objects are created if
+// they don't already exists, and `d` also must not already exists.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const setIfDoesNotExist = <U>(into: any, path: string[], what: U) => {
+  for (const [i, segment] of path.entries()) {
+    if (!Object.hasOwn(into, segment)) {
+      into[segment] = i < path.length - 1 ? {} : what
+    }
+    into = into[segment]
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const set = <U>(into: any, path: string[], what: U) => {
+  for (const [i, segment] of path.entries()) {
+    if (i === path.length - 1) {
+      into[segment] = what
+    } else if (!Object.hasOwn(into, segment)) {
+      into[segment] = {}
+    }
+    into = into[segment]
+  }
 }

@@ -1,4 +1,5 @@
-import {logger} from './logging'
+import {logger} from '../utils/logging'
+
 import {sendRequestProxy} from './sendRequestProxy'
 import {setupClientChannel} from './setupClientChannel'
 import type {
@@ -74,6 +75,8 @@ function createConnectors<
     currentContext,
     targetContext,
     eventHandler: async (connectorKind, method, args) => {
+      if (connectorKind == null) return
+
       const eventHandler = eventHandlers.get(connectorKind)
       if (eventHandler) {
         await eventHandler(method as ServiceEvent, args)

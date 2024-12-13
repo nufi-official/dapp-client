@@ -7,7 +7,7 @@ import type {
   MessageToClient,
   Response,
   SuccessResponse,
-} from '../core/types'
+} from '../dappCore/types'
 
 import type {CreateConnectorObject} from './mocks'
 import {getMockedInjectConnectors} from './mocks'
