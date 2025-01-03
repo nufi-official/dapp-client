@@ -58,6 +58,7 @@ function createConnectors<
   onBeforeFirstSend,
   onBeforeRequest,
   overridableWallets,
+  onConnectorWindowClosed,
   initChannelData,
 }: CreateConnectorsParams<Config, ConnectorKind>): [
   InjectedConnector[],
@@ -74,6 +75,7 @@ function createConnectors<
     onBeforeFirstSend,
     currentContext,
     targetContext,
+    onConnectorWindowClosed,
     eventHandler: async (connectorKind, method, args) => {
       if (connectorKind == null) return
 
