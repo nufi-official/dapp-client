@@ -66,6 +66,7 @@ export type ScriptContext =
   | 'app'
   | 'sdk'
   | 'widget'
+  | 'popup'
 
 export interface MessageHeader {
   senderContext: ScriptContext
