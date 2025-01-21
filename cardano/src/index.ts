@@ -128,11 +128,14 @@ export const initNufiDappCardanoSdk = (
     injectConnectors({
       connectorsToInject: {
         cardano: createInjectedConnectorFactory({
-          // Note that we are not checking whether the connector window is open,
-          // as we want the request to be redirected to widget in all cases.
-          // That is so that the we can return `true` after user refreshes the page.
-          getIsEnabled: (client) => async () => await client.proxy.isEnabled(),
-          shouldAwaitConnectorWindowOpen: true,
+          beforeEnable: async (client) => {
+            if (!client.isConnected()) {
+              // As in the current state we can not assign the same `priorityTimestamp` to
+              // both `connect` and `enable`, we are not awaiting
+              // `connect` which does not have to be awaited in case of the widget
+              client.connect()
+            }
+          },
         }),
       },
       config,
@@ -164,10 +167,7 @@ export const initNufiDappCardanoSdk = (
           method,
         })
         if (connectorKind !== 'cardano') return
-        if (
-          getWidgetVisibilityStatus() === 'hidden' &&
-          method === 'openConnectorWindow'
-        ) {
+        if (getWidgetVisibilityStatus() === 'hidden' && method === 'connect') {
           sdk.__logger.debug(
             '"initNufiDappCardanoSdk: onBeforeRequest" showWidget',
           )

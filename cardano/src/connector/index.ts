@@ -38,12 +38,8 @@ export type CardanoDappConnectorConfig = {
 export const API_VERSION = '1.1.0'
 
 export const createInjectedConnectorFactory =
-  (options: {
-    getIsEnabled: (client: MessagingClient) => () => Promise<boolean>
-    // As in the current state we can not assign the same `priorityTimestamp` to
-    // both `openConnectorWindow` and `enable`, we are not awaiting
-    // `openConnectorWindow` which does not have to be awaited in case of the widget
-    shouldAwaitConnectorWindowOpen?: boolean
+  (options?: {
+    beforeEnable?: (client: MessagingClient) => Promise<void>
   }): InjectedConnectorFactory<CardanoDappConnectorConfig> =>
   (client, config) => {
     const createProxyMethods = (methods: string[]) =>
@@ -96,32 +92,22 @@ export const createInjectedConnectorFactory =
 
     const connectorObject = {
       enable: async () => {
-        if (!client.isConnectorWindowOpen()) {
-          const openConnectorWindowPromise = client.openConnectorWindow()
-          if (!options.shouldAwaitConnectorWindowOpen) {
-            await openConnectorWindowPromise
-          }
-        }
+        await options?.beforeEnable?.(client)
+
         await client.proxy.enable() // This will throw on failure
         return {
           ...cip30ApiObject,
           cip95: cip95ApiObject,
         }
       },
-      isEnabled: options.getIsEnabled(client),
+      isEnabled: async () => await client.proxy.isEnabled(),
       ...(isCip62Enabled
         ? {
             catalyst: {
               apiVersion: '0.1.0',
               enable: async (purposes: number[]) => {
                 ensureCatalystVotingPurpose(purposes)
-                if (!client.isConnectorWindowOpen()) {
-                  const openConnectorWindowPromise =
-                    client.openConnectorWindow()
-                  if (!options.shouldAwaitConnectorWindowOpen) {
-                    await openConnectorWindowPromise
-                  }
-                }
+                await options?.beforeEnable?.(client)
                 await client.proxy.enable() // This will throw on failure
                 return cip62ApiObject
               },

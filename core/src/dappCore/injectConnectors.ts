@@ -34,6 +34,7 @@ export type CreateConnectorsParams<
   targetContext: ScriptContext
   sendPortPostMessage: (message: unknown, transfer: Transferable[]) => void
   overridableWallets: ReadonlyArray<string>
+  isInitiallyConnected?: boolean
   onConnectorWindowClosed?: (
     msg: MessageToClientEvent<ConnectorKind>,
   ) => ErrorResponse
@@ -60,6 +61,7 @@ function createConnectors<
   overridableWallets,
   onConnectorWindowClosed,
   initChannelData,
+  isInitiallyConnected,
 }: CreateConnectorsParams<Config, ConnectorKind>): [
   InjectedConnector[],
   (() => Promise<WalletOverrides>) | null,
@@ -118,56 +120,30 @@ function createConnectors<
       const sendRequest = multiplexedHandler.bind(undefined, connectorKind)
       const proxy = sendRequestProxy(sendRequest)
 
-      let connectorWindowOpen = false
+      let isConnected = !!isInitiallyConnected
+
       const client: MessagingClient = {
-        sendRequest,
         proxy,
-        openConnectorWindow: async (meta) => {
-          logger.debug('"createConnectors": openConnectorWindow called')
-          await proxy.openConnectorWindow(meta)
-          connectorWindowOpen = true
-          logger.debug('"createConnectors": openConnectorWindow finished')
+        connect: async (meta) => {
+          logger.debug('"createConnectors": connect called')
+          await proxy.connectMessagingClient(meta)
+          isConnected = true
+          logger.debug('"createConnectors": connect finished')
         },
-        closeConnectorWindow: async () => {
-          logger.debug('"createConnectors": closeConnectorWindow called')
-          await proxy.closeConnectorWindow()
-          connectorWindowOpen = false
-          logger.debug('"createConnectors": closeConnectorWindow finished')
+        cancelRequests: async () => {
+          logger.debug('"createConnectors": cancelRequests called')
+          await proxy.cancelMessagingClientRequests()
+          logger.debug('"createConnectors": cancelRequests finished')
         },
-        // Original method used by connectors that have to be closed after Dapp refresh.
-        // Consider migrating other connectors to `isConnectorWindowOpenAsync`.
-        isConnectorWindowOpen: () => {
-          logger.debug(
-            `"createConnectors": isConnectorWindowOpen ${connectorWindowOpen}`,
-          )
-          return connectorWindowOpen
-        },
-        isConnectorWindowOpenAsync: async () => {
-          try {
-            logger.debug(
-              `"createConnectors": isConnectorWindowOpenAsync called`,
-            )
-            const res = await proxy.isConnectorWindowOpen()
-            logger.debug(
-              `"createConnectors": isConnectorWindowOpenAsync result ${res}`,
-            )
-            return res
-          } catch (err) {
-            // If connector window is not open we are not allowed to proxy
-            // events to it so this will fail. In such case all we can do
-            // is to consider the window closed.
-            logger.debug('"createConnectors": isConnectorWindowOpenAsync error')
-            return false
-          }
+        isConnected: () => {
+          logger.debug(`"createConnectors": isConnected ${isConnected}`)
+          return isConnected
         },
       }
 
       const connector = connectorsToInject[connectorKind](client, config)
       if (connector) {
         const eventHandler: EventHandler = async (method, args) => {
-          if (method === 'connectorWindowClosed') {
-            connectorWindowOpen = false
-          }
           await connector.eventHandler(method, args)
         }
         eventHandlers.set(connectorKind, eventHandler)

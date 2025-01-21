@@ -134,20 +134,11 @@ export type Handler = (
 // The MessagingClient is considered an internal api, as the messages can carry stuff other than connector calls.
 // The decision to flatten everything into a single namespace was made, as at that point no connectors were sending unfiltered messages anyway.
 export interface MessagingClient {
-  sendRequest(
-    method: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    args: any[],
-  ): Promise<SuccessResponse> /* rejects with ErrorResponse */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proxy: {[_ in string]: (...args: any[]) => Promise<any>}
-  openConnectorWindow(meta?: unknown): Promise<void>
-  closeConnectorWindow(): Promise<void>
-  /** Get the state of the connector window tracked automatically on the client side. */
-  isConnectorWindowOpen(): boolean
-  /** Get the state of the connector window tracked in connector window that remains
-   * open even on Dapp refresh. */
-  isConnectorWindowOpenAsync(): Promise<boolean>
+  cancelRequests(): Promise<void>
+  isConnected(): boolean
+  connect(meta?: unknown): Promise<void>
 }
 
 /**
