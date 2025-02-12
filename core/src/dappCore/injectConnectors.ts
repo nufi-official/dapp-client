@@ -91,8 +91,7 @@ function createConnectors<
   })
 
   const getWalletOverridesRequest = async () =>
-    (await multiplexedHandler(
-      null,
+    (await multiplexedHandler(null)(
       'getWalletOverrides',
       [],
     )) as unknown as WalletOverrides
@@ -117,7 +116,7 @@ function createConnectors<
     config.connectors,
   ) as ConnectorKind[]) {
     try {
-      const sendRequest = multiplexedHandler.bind(undefined, connectorKind)
+      const sendRequest = multiplexedHandler(connectorKind)
       const proxy = sendRequestProxy(sendRequest)
 
       let isConnected = !!isInitiallyConnected

@@ -168,40 +168,39 @@ export const setupClientChannel = <ConnectorKind extends UntypedConnectorKind>({
     }
     return channel.port1
   })
-  return async (
-    connectorKind: null | ConnectorKind,
-    method: string,
-    args: RequestArgument[],
-  ) => {
-    const priorityTimestamp = new Date().toISOString()
-    logger.debug('"setupClientChannel" calling API', {
-      connectorKind,
-      method,
-      args,
-    })
+  // Manually curried, as some websites such as https://io.gidonline.fun
+  // override `Function.prototype.bind`, making the usage of `bind` broken inside them.
+  return (connectorKind: null | ConnectorKind) =>
+    async (method: string, args: RequestArgument[]) => {
+      const priorityTimestamp = new Date().toISOString()
+      logger.debug('"setupClientChannel" calling API', {
+        connectorKind,
+        method,
+        args,
+      })
 
-    // this ensures that messages don't collide even if we inject the
-    // connector objects into multiple (i)frames within the same page (i.e. tab)
-    const id = getRandomUUID()
-    const request: RequestMessage<ConnectorKind> = {
-      senderContext: currentContext,
-      targetContext,
-      id,
-      connectorKind,
-      method,
-      args,
-      priorityTimestamp,
+      // this ensures that messages don't collide even if we inject the
+      // connector objects into multiple (i)frames within the same page (i.e. tab)
+      const id = getRandomUUID()
+      const request: RequestMessage<ConnectorKind> = {
+        senderContext: currentContext,
+        targetContext,
+        id,
+        connectorKind,
+        method,
+        args,
+        priorityTimestamp,
+      }
+
+      onBeforeRequest?.({connectorKind, method, args})
+
+      await channelReady
+
+      logger.debug('"setupClientChannel" posting port message', request)
+
+      getPort().postMessage(request)
+      return new Promise<SuccessResponse>((resolve, reject) =>
+        activeRequests.set(id, {resolve, reject}),
+      )
     }
-
-    onBeforeRequest?.({connectorKind, method, args})
-
-    await channelReady
-
-    logger.debug('"setupClientChannel" posting port message', request)
-
-    getPort().postMessage(request)
-    return new Promise<SuccessResponse>((resolve, reject) =>
-      activeRequests.set(id, {resolve, reject}),
-    )
-  }
 }
