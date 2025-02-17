@@ -11,17 +11,10 @@ import type {
 } from '@nufi/dapp-client-core'
 
 import {emulatedWalletIcons} from './emulatedWalletIcons'
-import {ensureCatalystVotingPurpose, supportedVotingPurposes} from './utils'
 
 export * from './utils'
 
 const connectorKind = 'cardano'
-
-type CardanoSpecificDappConnectorConfig = {
-  cardano: {
-    isCip62Enabled: boolean
-  }
-}
 
 /* The static configuration is determined at compile time, and must not change
  * afterwards.  */
@@ -32,7 +25,9 @@ export type CardanoDappConnectorConfig = {
   icons: {
     default: string
   }
-  connectors: CardanoSpecificDappConnectorConfig
+  connectors: {
+    cardano: Record<PropertyKey, never>
+  }
 }
 
 export const API_VERSION = '1.1.0'
@@ -68,17 +63,6 @@ export const createInjectedConnectorFactory =
       },
     }
 
-    // CIP-0062
-    const cip62ApiObject = {
-      ...cip30ApiObject,
-      ...createProxyMethods([
-        'signVotes',
-        'getVotingCredentials',
-        'submitDelegation',
-      ]),
-      getVotingPurposes: async () => supportedVotingPurposes,
-    }
-
     // CIP-0095
     const cip95ApiObject = {
       ...createProxyMethods([
@@ -87,8 +71,6 @@ export const createInjectedConnectorFactory =
         'getUnregisteredPubStakeKeys',
       ]),
     }
-
-    const isCip62Enabled = config.connectors.cardano.isCip62Enabled
 
     const connectorObject = {
       enable: async () => {
@@ -101,23 +83,10 @@ export const createInjectedConnectorFactory =
         }
       },
       isEnabled: async () => await client.proxy.isEnabled(),
-      ...(isCip62Enabled
-        ? {
-            catalyst: {
-              apiVersion: '0.1.0',
-              enable: async (purposes: number[]) => {
-                ensureCatalystVotingPurpose(purposes)
-                await options?.beforeEnable?.(client)
-                await client.proxy.enable() // This will throw on failure
-                return cip62ApiObject
-              },
-            },
-          }
-        : {}),
       apiVersion: API_VERSION,
       name: config.name,
       icon: config.icons.default,
-      supportedExtensions: [{cip: 95}, ...(isCip62Enabled ? [{cip: 62}] : [])],
+      supportedExtensions: [{cip: 95}],
     } as unknown as ConnectorObject
 
     return {

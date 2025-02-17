@@ -45,9 +45,7 @@ const getDappConnectorsConfig = ({
     },
     name,
     connectors: {
-      cardano: {
-        isCip62Enabled: false,
-      },
+      cardano: {},
     },
   }
 }
