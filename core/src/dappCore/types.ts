@@ -50,9 +50,10 @@ type TrustedRequestContext = {
 }
 
 // This is used to augment requests with some additional metadata
-export type RequestContext = {
+export type RequestContext<TConnectorKindSpecificContext = unknown> = {
   // data originating from trusted sources
   trusted: TrustedRequestContext
+  connectorKindSpecificContext?: TConnectorKindSpecificContext
 }
 
 // Though having such a specific type may cause unnecessary changes to this package,
