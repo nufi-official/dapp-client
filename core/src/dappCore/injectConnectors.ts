@@ -201,6 +201,17 @@ const initializeConnectors = async (
   const connectorsWithOverridesToInit = _connectors.filter(
     (c) => c.type === 'withOverrides',
   ) as InjectedConnectorWithOverrides[]
+
+  for (const connector of connectorsWithOverridesToInit) {
+    try {
+      connector.beforeInject?.(window, null)
+    } catch (e) {
+      // We will continue with the other connectors even if one of them fails.
+      // eslint-disable-next-line no-console
+      console.error(e)
+    }
+  }
+
   const walletOverrides = getWalletOverrides ? await getWalletOverrides() : null
 
   for (const connector of connectorsWithOverridesToInit) {
@@ -214,7 +225,7 @@ const initializeConnectors = async (
   }
 }
 
-export async function injectConnectors<
+export function injectConnectors<
   Config extends DappConnectorsConfig,
   ConnectorKind extends UntypedConnectorKind,
 >(params: CreateConnectorsParams<Config, ConnectorKind>) {
@@ -222,7 +233,7 @@ export async function injectConnectors<
 
   // Be mindful with `await` in this file! See `initializeConnectors` explanation of how
   // it is safe to use it when initializing connectors.
-  await initializeConnectors(connectorsToInitialize, getWalletOverrides)
+  initializeConnectors(connectorsToInitialize, getWalletOverrides)
 }
 
 export type InjectConnectors = typeof injectConnectors
