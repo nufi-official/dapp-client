@@ -126,7 +126,7 @@ const height = {
   },
   mobile: {
     closed: '80px',
-    opened: '100vh',
+    opened: '100dvh',
     hidden: HIDDEN_WIDGET_SIZE,
   },
 }
