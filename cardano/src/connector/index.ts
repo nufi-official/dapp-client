@@ -62,10 +62,10 @@ export const createInjectedConnectorFactory =
         getCollateral: client.proxy.getCollateral,
       },
     }
-
     // CIP-0095
     const cip95ApiObject = {
       ...createProxyMethods([
+        'signData',
         'getPubDRepKey',
         'getRegisteredPubStakeKeys',
         'getUnregisteredPubStakeKeys',
