@@ -174,7 +174,6 @@ export interface SimpleInjectedConnector extends InjectedConnectorBase {
 
 export interface InjectedConnectorWithOverrides extends InjectedConnectorBase {
   inject: (window: Window, overrides: WalletOverrides | null) => void
-  beforeInject?: (window: Window, overrides: WalletOverrides | null) => void
   type: 'withOverrides'
 }
 

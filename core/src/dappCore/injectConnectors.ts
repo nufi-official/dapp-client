@@ -202,9 +202,10 @@ const initializeConnectors = async (
     (c) => c.type === 'withOverrides',
   ) as InjectedConnectorWithOverrides[]
 
+  // inject connectors first without overrides to inject them as early as possible
   for (const connector of connectorsWithOverridesToInit) {
     try {
-      connector.beforeInject?.(window, null)
+      connector.inject(window, null)
     } catch (e) {
       // We will continue with the other connectors even if one of them fails.
       // eslint-disable-next-line no-console
