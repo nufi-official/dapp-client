@@ -4,7 +4,6 @@ import {sendRequestProxy} from './sendRequestProxy'
 import {setupClientChannel} from './setupClientChannel'
 import type {
   UntypedConnectorKind,
-  InjectedConnector,
   EventHandler,
   MessagingClient,
   ServiceEvent,
@@ -14,8 +13,7 @@ import type {
   DappConnectorsConfig,
   ErrorResponse,
   MessageToClientEvent,
-  InjectedConnectorWithOverrides,
-  SimpleInjectedConnector,
+  InjectedConnector,
   RequestArgument,
   InitChannelData,
 } from './types'
@@ -174,15 +172,11 @@ function createConnectors<
  * function is "async", but no "await" was called until this point).
  * 3. Inject the remaining connectors after doing async logic (e.g. fetching wallet overrides).
  */
-const initializeConnectors = async (
-  _connectors: InjectedConnector[],
+const initializeConnectors = (
+  connectors: InjectedConnector[],
   getWalletOverrides: (() => Promise<WalletOverrides>) | null,
 ) => {
-  const simpleConnectorsToInit = _connectors.filter(
-    (c) => c.type === 'simple',
-  ) as SimpleInjectedConnector[]
-
-  for (const connector of simpleConnectorsToInit) {
+  for (const connector of connectors) {
     try {
       logger.debug(
         `"createConnectors": ${connector.connectorKind} initialization start`,
@@ -198,31 +192,17 @@ const initializeConnectors = async (
     }
   }
 
-  const connectorsWithOverridesToInit = _connectors.filter(
-    (c) => c.type === 'withOverrides',
-  ) as InjectedConnectorWithOverrides[]
-
-  for (const connector of connectorsWithOverridesToInit) {
-    try {
-      connector.beforeInject?.(window, null)
-    } catch (e) {
-      // We will continue with the other connectors even if one of them fails.
-      // eslint-disable-next-line no-console
-      console.error(e)
+  getWalletOverrides?.().then((walletOverrides) => {
+    for (const connector of connectors) {
+      try {
+        connector.injectOverrides?.(window, walletOverrides)
+      } catch (e) {
+        // We will continue with the other connectors even if one of them fails.
+        // eslint-disable-next-line no-console
+        console.error(e)
+      }
     }
-  }
-
-  const walletOverrides = getWalletOverrides ? await getWalletOverrides() : null
-
-  for (const connector of connectorsWithOverridesToInit) {
-    try {
-      connector.inject(window, walletOverrides)
-    } catch (e) {
-      // We will continue with the other connectors even if one of them fails.
-      // eslint-disable-next-line no-console
-      console.error(e)
-    }
-  }
+  })
 }
 
 export function injectConnectors<

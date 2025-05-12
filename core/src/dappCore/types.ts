@@ -162,24 +162,11 @@ export type InjectedConnectorFactory<Config extends DappConnectorsConfig> = (
   config: Config,
 ) => InjectedConnector
 
-interface InjectedConnectorBase {
+export type InjectedConnector = {
   connectorKind: UntypedConnectorKind
   eventHandler: EventHandler
-}
-
-export interface SimpleInjectedConnector extends InjectedConnectorBase {
   inject: (window: Window) => void
-  type: 'simple'
+  injectOverrides?: (window: Window, overrides: WalletOverrides) => void
 }
-
-export interface InjectedConnectorWithOverrides extends InjectedConnectorBase {
-  inject: (window: Window, overrides: WalletOverrides | null) => void
-  beforeInject?: (window: Window, overrides: WalletOverrides | null) => void
-  type: 'withOverrides'
-}
-
-export type InjectedConnector =
-  | SimpleInjectedConnector
-  | InjectedConnectorWithOverrides
 
 export type ConnectorPlatform = 'extension' | 'sso' | 'snap'

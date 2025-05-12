@@ -92,7 +92,7 @@ export const createInjectedConnectorFactory =
     return {
       connectorKind,
       type: 'withOverrides',
-      inject: (window, walletOverrides) => {
+      inject: (window) => {
         // We are not using `setIfDoesNotExist` here as in case of Widget
         // we are expecting reassignments (due to messaging port recreation).
         set(
@@ -100,6 +100,8 @@ export const createInjectedConnectorFactory =
           [connectorKind, objKeyByConnectorPlatform[config.connectorPlatform]],
           connectorObject,
         )
+      },
+      injectOverrides: (window, walletOverrides) => {
         if (walletOverrides?.eternl) {
           const eternlConnector = {
             ...connectorObject,
