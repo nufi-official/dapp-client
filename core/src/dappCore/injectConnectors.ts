@@ -11,11 +11,9 @@ import type {
   ScriptContext,
   InjectedConnectorFactory,
   DappConnectorsConfig,
-  ErrorResponse,
-  MessageToClientEvent,
-  InjectedConnector,
   RequestArgument,
   InitChannelData,
+  InjectedConnector,
 } from './types'
 import {hardenUnreliableRequest} from './utils'
 
@@ -33,9 +31,6 @@ export type CreateConnectorsParams<
   sendPortPostMessage: (message: unknown, transfer: Transferable[]) => void
   overridableWallets: ReadonlyArray<string>
   isInitiallyConnected?: boolean
-  onConnectorWindowClosed?: (
-    msg: MessageToClientEvent<ConnectorKind>,
-  ) => ErrorResponse
   onBeforeFirstSend?: () => Promise<void>
   onBeforeRequest?: (args: {
     connectorKind: null | ConnectorKind
@@ -57,7 +52,6 @@ function createConnectors<
   onBeforeFirstSend,
   onBeforeRequest,
   overridableWallets,
-  onConnectorWindowClosed,
   initChannelData,
   isInitiallyConnected,
 }: CreateConnectorsParams<Config, ConnectorKind>): [
@@ -75,7 +69,6 @@ function createConnectors<
     onBeforeFirstSend,
     currentContext,
     targetContext,
-    onConnectorWindowClosed,
     eventHandler: async (connectorKind, method, args) => {
       if (connectorKind == null) return
 

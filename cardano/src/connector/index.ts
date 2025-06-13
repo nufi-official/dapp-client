@@ -118,11 +118,6 @@ export const createInjectedConnectorFactory =
           setIfDoesNotExist(window, [connectorKind, 'eternl'], eternlConnector)
         }
       },
-      async eventHandler(method) {
-        if (method === 'connectorWindowClosed') {
-          // Unfortunately, CIP-30 does not make it possible to signal a
-          // disconnect to the dapp. We will just have to ignore this.
-        }
-      },
+      async eventHandler() {},
     }
   }

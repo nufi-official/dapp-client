@@ -47,6 +47,7 @@ export type ErrorResponse = NewType<'ErrorResponse', []>
 type TrustedRequestContext = {
   origin: string
   favIconUrl?: string
+  autoLoginAccountInfo?: Record<string, unknown>
 }
 
 // This is used to augment requests with some additional metadata
@@ -118,7 +119,10 @@ export type SendRequest = (
   args: RequestArgument[],
 ) => Promise<SuccessResponse>
 
-export type ServiceEvent = 'connectorWindowClosed' | 'connectorWindowOpen'
+export type ServiceEvent =
+  | 'connectorWindowClosed'
+  | 'accountChanged'
+  | 'disconnected'
 
 export type EventHandler = (
   method: ServiceEvent,

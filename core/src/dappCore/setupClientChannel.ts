@@ -11,7 +11,6 @@ import type {
   MessageToClient,
   ScriptContext,
   UntypedConnectorKind,
-  MessageToClientEvent,
   InitChannelData,
   ConnectorPlatform,
 } from './types'
@@ -48,9 +47,6 @@ type SetupClientChannelParams<ConnectorKind extends UntypedConnectorKind> = {
     method: string
     args: RequestArgument[]
   }) => unknown
-  onConnectorWindowClosed?: (
-    msg: MessageToClientEvent<ConnectorKind>,
-  ) => ErrorResponse
   initChannelData?: InitChannelData
 }
 
@@ -64,7 +60,6 @@ export const setupClientChannel = <ConnectorKind extends UntypedConnectorKind>({
   currentContext,
   targetContext,
   eventHandler,
-  onConnectorWindowClosed,
   sendPortPostMessage,
   onBeforeFirstSend,
   onBeforeRequest,
@@ -148,18 +143,6 @@ export const setupClientChannel = <ConnectorKind extends UntypedConnectorKind>({
           // and we just want to ignore them as they are not related to "our" frame
           if (msg.targetOrigin !== window.location.origin) return
 
-          if (msg.method === 'connectorWindowClosed') {
-            const errorResponse = (() => {
-              if (onConnectorWindowClosed != null) {
-                return onConnectorWindowClosed(msg)
-              }
-              return 'Connector window was closed' as unknown as ErrorResponse
-            })()
-
-            // Connector window closed, reject all requests in progress.
-            activeRequests.forEach(({reject}) => reject(errorResponse))
-            activeRequests.clear()
-          }
           eventHandler(msg.connectorKind, msg.method, msg.args)
           break
         default:
