@@ -10,7 +10,9 @@
   "main": "dist/index.js",
   "types": "dist/index",
   "files": [
-    "dist"
+    "dist",
+    "!dist/.tsbuildinfo",
+    "!dist/**/*.map"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
