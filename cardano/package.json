@@ -1,24 +1,42 @@
 {
   "name": "@nufi/dapp-client-cardano",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "license": "MIT",
   "homepage": "https://github.com/nufi-official/dapp-client/tree/master/cardano",
   "repository": {
     "type": "git",
     "url": "git://github.com/nufi-official/dapp-client.git"
   },
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index",
   "files": [
+    "src",
+    "!src/__tests__",
     "dist",
     "!dist/.tsbuildinfo",
-    "!dist/**/*.map"
+    "!dist/**/*.ts.map",
+    "!dist/**/*.cts.map"
   ],
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      },
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
-    "build": "rm -rf dist && tsc",
+    "build": "rm -rf dist && tsup --onSuccess 'yarn build:declarationMap'",
+    "watch": "tsup --watch --onSuccess 'yarn build:declarationMap'",
+    "build:declarationMap": "tsc --emitDeclarationOnly --declarationMap",
     "test:tsc": "tsc --noEmit",
     "test": "yarn test:tsc",
-    "watch": "tsc --watch",
     "prepublish": "yarn test",
     "prepack": "yarn build"
   },
@@ -26,6 +44,8 @@
     "@nufi/dapp-client-core": "workspace:*"
   },
   "devDependencies": {
+    "esbuild-plugin-file-path-extensions": "^2.1.4",
+    "tsup": "^8.5.0",
     "typescript": "^5.5.3"
   },
   "packageManager": "yarn@4.1.0"

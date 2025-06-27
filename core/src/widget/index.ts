@@ -3,4 +3,5 @@ export type {
   SocialLoginInfoChangedMessage,
   SocialLoginInfo,
 } from './socialLoginInfo'
-export {CORE_SDK_NOT_INITIALIZED, IFrameOptions} from './init'
+export type {IFrameOptions} from './init'
+export {CORE_SDK_NOT_INITIALIZED} from './init'
