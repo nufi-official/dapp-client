@@ -109,10 +109,7 @@ export const createInjectedConnectorFactory =
             icon: emulatedWalletIcons.eternl,
             experimental: {
               // without this, e.g. jpg.store fails to recognize eternl wallet
-              appVersion: {major: 1, minor: 9, patch: 5},
-              enableLogs: () => {
-                /* empty */
-              },
+              appVersion: {major: 2, minor: 0, patch: 9, build: 14},
             },
           }
           setIfDoesNotExist(window, [connectorKind, 'eternl'], eternlConnector)
