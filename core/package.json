@@ -50,5 +50,5 @@
     "tsup": "^8.5.0",
     "typescript": "^5.5.3"
   },
-  "packageManager": "yarn@4.1.0"
+  "packageManager": "yarn@4.10.2"
 }
