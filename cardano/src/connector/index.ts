@@ -91,7 +91,6 @@ export const createInjectedConnectorFactory =
 
     return {
       connectorKind,
-      type: 'withOverrides',
       inject: (window) => {
         // We are not using `setIfDoesNotExist` here as in case of Widget
         // we are expecting reassignments (due to messaging port recreation).
