@@ -26,9 +26,9 @@ const loginTypeProps = {
     name: 'Cardano Wallet',
   },
   web3Auth: {
-    icon: nufiIcon, // TODO(pj)[redesign]: new icon
+    icon: nufiIcon,
     connectorPlatform: 'sso',
-    name: 'NuFiConnect', // TODO(pj)[redesign]: new casing
+    name: 'NUFI Connect',
   },
 } as const
 
