@@ -47,7 +47,10 @@ export type ErrorResponse = NewType<'ErrorResponse', []>
 type TrustedRequestContext = {
   origin: string
   favIconUrl?: string
-  autoLoginAccountInfo?: Record<string, unknown>
+  accountLoginAction?: {
+    type: string
+    data: Record<string, unknown>
+  }
 }
 
 // This is used to augment requests with some additional metadata
