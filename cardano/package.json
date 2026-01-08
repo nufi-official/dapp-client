@@ -1,6 +1,6 @@
 {
   "name": "@nufi/dapp-client-cardano",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "license": "MIT",
   "homepage": "https://github.com/nufi-official/dapp-client/tree/master/cardano",
   "repository": {
