@@ -29,7 +29,7 @@ export type CreateConnectorsParams<
   currentContext: ScriptContext
   targetContext: ScriptContext
   sendPortPostMessage: (message: unknown, transfer: Transferable[]) => void
-  overridableWallets: ReadonlyArray<string>
+  overridableWallets: string[]
   isInitiallyConnected?: boolean
   onBeforeFirstSend?: () => Promise<void>
   onBeforeRequest?: (args: {
