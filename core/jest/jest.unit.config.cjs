@@ -12,6 +12,6 @@ module.exports = {
   testMatch: ['**/?(*.)+(test).+(ts)'],
   moduleFileExtensions: ['js', 'ts'],
   transform: {
-    '^.+\\.(t|j)sx?$': ['@swc/jest'],
+    '^.+\\.(t|j)sx?$': ['@swc/jest', {jsc: {target: 'es2020'}}],
   },
 }

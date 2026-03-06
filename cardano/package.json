@@ -46,7 +46,7 @@
   "devDependencies": {
     "esbuild-plugin-file-path-extensions": "^2.1.4",
     "tsup": "^8.5.0",
-    "typescript": "^5.5.3"
+    "typescript": "^5.9.3"
   },
   "packageManager": "yarn@4.10.3"
 }
