@@ -10,7 +10,7 @@ export const logger = {
   debug: (...data: unknown[]) => {
     if (_logLevel === 'debug') {
       // eslint-disable-next-line no-console
-      console.log('NuFi-debug:SDK', {calledAt: new Date().toString()}, ...data)
+      console.log('NUFI-debug:SDK', {calledAt: new Date().toString()}, ...data)
     }
   },
 }

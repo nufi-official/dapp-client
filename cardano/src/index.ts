@@ -156,7 +156,7 @@ export const initNufiDappCardanoSdk = (
           getCardanoSdkInfo(),
         ])
       },
-      // As dapp developers have to be aware of integrating NuFi, wallet
+      // As dapp developers have to be aware of integrating NUFI, wallet
       // overrides do not make much sense
       overridableWallets: [],
       onBeforeRequest: ({connectorKind, method}) => {
